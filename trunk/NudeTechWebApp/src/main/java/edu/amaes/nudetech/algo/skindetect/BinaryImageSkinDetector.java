@@ -15,69 +15,65 @@ import edu.amaes.nudetech.algo.skindetect.vo.SkinDetectedImage;
 
 public class BinaryImageSkinDetector implements SkinDetector {
 
-	private static final int FOREGROUND_PIXEL = 1;
+    private static final int FOREGROUND_PIXEL = 1;
+    private static final int BACKGROUND_PIXEL = 0;
+    private List<SkinColorClassifier> skinClassifiers = new ArrayList<SkinColorClassifier>();
 
-	private static final int BACKGROUND_PIXEL = 0;
+    public BinaryImageSkinDetector() {
+        init();
+    }
 
-	private List<SkinColorClassifier> skinClassifiers = new ArrayList<SkinColorClassifier>();
+    private void init() {
+        skinClassifiers.add(new RGBClassifier());
+        skinClassifiers.add(new NormalizedRGBClassifier());
+        skinClassifiers.add(new HSVClassifier());
+    }
 
-	public BinaryImageSkinDetector() {
-		init();
-	}
+    public SkinDetectedImage detectSkin(ImagePlus image) {
+        if (image == null) {
+            throw new IllegalArgumentException("Input image cannot be null");
+        }
 
-	private void init() {
-		skinClassifiers.add(new RGBClassifier());
-		skinClassifiers.add(new NormalizedRGBClassifier());
-		skinClassifiers.add(new HSVClassifier());
-	}
+        int skinPixelCount = countSkinPixels(image);
 
-	public SkinDetectedImage detectSkin(ImagePlus image) {
-		if (image == null) {
-			throw new IllegalArgumentException("Input image cannot be null");
-		}
-		
-		int skinPixelCount = countSkinPixels(image);
-		
-		SkinDetectedImage skinDetectedImage = new SkinDetectedImage();
-		skinDetectedImage.setImage(image);
-		skinDetectedImage.setSkinPixelCount(skinPixelCount);
+        SkinDetectedImage skinDetectedImage = new SkinDetectedImage();
+        skinDetectedImage.setImage(image);
+        skinDetectedImage.setSkinPixelCount(skinPixelCount);
 
-		return skinDetectedImage;
-	}
+        return skinDetectedImage;
+    }
 
-	private int countSkinPixels(ImagePlus image) {
-		ImageProcessor imgProcessor = image.getProcessor();
-		
-		int skinPixelCount = 0;
-		
-		for (int y = 0; y < imgProcessor.getHeight(); y++) {
-			for (int x = 0; x < imgProcessor.getWidth(); x++) {
-				int pixel = imgProcessor.getPixel(x, y);
+    private int countSkinPixels(ImagePlus image) {
+        ImageProcessor imgProcessor = image.getProcessor();
 
-				boolean isSkinPixel = classifySkinPixel(pixel);
-				if (isSkinPixel) {
-					imgProcessor.putPixel(x, y, FOREGROUND_PIXEL);
-					skinPixelCount++;
-				} else {
-					imgProcessor.putPixel(x, y, BACKGROUND_PIXEL);
-				}
-			}
-		}
-		return skinPixelCount;
-	}
+        int skinPixelCount = 0;
 
-	private boolean classifySkinPixel(int pixel) {
-		boolean isSkinPixel = false;
+        for (int y = 0; y < imgProcessor.getHeight(); y++) {
+            for (int x = 0; x < imgProcessor.getWidth(); x++) {
+                int pixel = imgProcessor.getPixel(x, y);
 
-		Iterator<SkinColorClassifier> classifierIterator = skinClassifiers
-				.iterator();
+                boolean isSkinPixel = classifySkinPixel(pixel);
+                if (isSkinPixel) {
+                    imgProcessor.putPixel(x, y, FOREGROUND_PIXEL);
+                    skinPixelCount++;
+                } else {
+                    imgProcessor.putPixel(x, y, BACKGROUND_PIXEL);
+                }
+            }
+        }
+        return skinPixelCount;
+    }
 
-		while (classifierIterator.hasNext() && !isSkinPixel) {
-			SkinColorClassifier skinClassifier = classifierIterator.next();
-			isSkinPixel = skinClassifier.isSkinPixel(pixel);
-		}
+    private boolean classifySkinPixel(int pixel) {
+        boolean isSkinPixel = false;
 
-		return isSkinPixel;
-	}
+        Iterator<SkinColorClassifier> classifierIterator = skinClassifiers.iterator();
 
+        while (classifierIterator.hasNext() && !isSkinPixel) {
+            SkinColorClassifier skinClassifier = classifierIterator.next();
+            isSkinPixel = skinClassifier.isSkinPixel(pixel);
+        }
+
+        return isSkinPixel;
+    }
 }

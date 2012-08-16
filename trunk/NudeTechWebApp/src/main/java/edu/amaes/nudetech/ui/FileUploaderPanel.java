@@ -1,17 +1,11 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package edu.amaes.nudetech.ui;
 
 import com.vaadin.terminal.ThemeResource;
-import com.vaadin.ui.*;
-import com.vaadin.ui.Panel;
-import com.vaadin.ui.Upload.FailedEvent;
 import com.vaadin.ui.Upload.FinishedEvent;
 import com.vaadin.ui.Upload.Receiver;
 import com.vaadin.ui.Upload.StartedEvent;
 import com.vaadin.ui.Upload.SucceededEvent;
+import com.vaadin.ui.*;
 import edu.amaes.nudetech.algo.nuditydetect.ColoredImageNudityDetector;
 import edu.amaes.nudetech.algo.nuditydetect.ImageNudityDetector;
 import edu.amaes.nudetech.algo.video.frameextract.VideoFrameExtractor;
@@ -29,15 +23,12 @@ import javax.imageio.ImageIO;
  * @author Angelo Balaguer
  */
 public class FileUploaderPanel extends VerticalLayout {
-
+    
     private Label fileName = new Label();
     private Label textualProgress = new Label();
     private ProgressIndicator progressIndicator = new ProgressIndicator();
     private FileUploaderPanel.LineBreakCounter counter = new FileUploaderPanel.LineBreakCounter();
     private Upload upload = new Upload(null, counter);
-    private Embedded logoEmbedX;
-    private Embedded logoEmbedCheck;
-    private Embedded logoNude;
 
     public FileUploaderPanel() {
         setSpacing(true);
@@ -64,42 +55,30 @@ public class FileUploaderPanel extends VerticalLayout {
         cancelProcessing.setStyleName("small");
 
         Panel uploadDetailsPanel = new Panel("Upload Details");
-        uploadDetailsPanel.setWidth("100%");
-        uploadDetailsPanel.setScrollable(false);
-        uploadDetailsPanel.setHeight("25%");
-
+        uploadDetailsPanel.setSizeUndefined();
+        
         FormLayout uploadDetailsPanelLayout = new FormLayout();
-        uploadDetailsPanelLayout.setMargin(false, false, false, true);
+        uploadDetailsPanelLayout.setMargin(true);
         uploadDetailsPanel.setContent(uploadDetailsPanelLayout);
-
+        
         HorizontalLayout progressLayout = new HorizontalLayout();
         progressLayout.setSpacing(true);
         progressLayout.setCaption("Upload Progress");
-
+        
         progressIndicator.setVisible(false);
         progressLayout.addComponent(progressIndicator);
         progressLayout.addComponent(cancelProcessing);
         uploadDetailsPanelLayout.addComponent(progressLayout);
-
+        
         fileName.setCaption("File name");
+     
         uploadDetailsPanelLayout.addComponent(fileName);
-        
-        logoEmbedX = new Embedded("",new ThemeResource("img/X.jpg"));
-        logoEmbedX.setType(Embedded.TYPE_IMAGE);
-        logoEmbedCheck = new Embedded("",new ThemeResource("img/check.jpg"));
-        logoEmbedCheck.setType(Embedded.TYPE_IMAGE);
-        
-        uploadDetailsPanelLayout.addComponent(logoEmbedX);
-        uploadDetailsPanelLayout.addComponent(logoEmbedCheck);
-        
-        logoEmbedX.setVisible(false);
-        logoEmbedCheck.setVisible(false);
-        
+      
         textualProgress.setVisible(false);
         uploadDetailsPanelLayout.addComponent(textualProgress);
 
         addComponent(uploadDetailsPanel);
-
+        
         upload.addListener(new Upload.StartedListener() {
 
             public void uploadStarted(StartedEvent event) {
@@ -111,8 +90,7 @@ public class FileUploaderPanel extends VerticalLayout {
                 textualProgress.setVisible(true);
                 // updates to client
                 fileName.setValue(event.getFilename());
-                logoEmbedX.setVisible(false);
-                logoEmbedCheck.setVisible(false);
+
                 cancelProcessing.setVisible(true);
             }
         });
@@ -130,6 +108,7 @@ public class FileUploaderPanel extends VerticalLayout {
         upload.addListener(new Upload.SucceededListener() {
 
             public void uploadSucceeded(SucceededEvent event) {
+                
             }
         });
 
@@ -145,35 +124,31 @@ public class FileUploaderPanel extends VerticalLayout {
         upload.addListener(new Upload.FinishedListener() {
 
             public void uploadFinished(FinishedEvent event) {
-                ImageNudityDetector nudityDetector = new ColoredImageNudityDetector();
-                VideoFrameExtractor frameExtractor = new VideoFrameExtractorImpl();
                 String mimetype = new MimetypesFileTypeMap().getContentType(counter.getUploadedFile());
                 String type = mimetype.split("/")[0];
                 if (type.equals("image")) {
                     try {
                         Image inputImage = ImageIO.read(counter.getUploadedFile());
+                        ImageNudityDetector nudityDetector = new ColoredImageNudityDetector();
                         boolean isNude = nudityDetector.isImageNude(inputImage);
                         System.out.println("file: " + counter.getUploadedFile().getName() + ", isNude: " + isNude);
-                        if(isNude) logoEmbedX.setVisible(true);
-                        else logoEmbedCheck.setVisible(true);
-                        counter.getUploadedFile().delete();
-                    } catch (IOException e) {
-                    }
-                } else {
-                    frameExtractor.extractFrames(counter.getUploadedFile().getAbsolutePath(), "D:/Test/");
-                    counter.getUploadedFile().delete();
-                    File folder = new File("D:/Test/");
-                    File[] frames = folder.listFiles();
-                    for (File frame : frames) {
-                        try {
+                    } catch (IOException e) {}
+                }
+                else {
+                    VideoFrameExtractor frameExtractor = new VideoFrameExtractorImpl();
+                        frameExtractor.extractFrames(counter.getUploadedFile().getAbsolutePath(), "C:/samples/Test/frames/");
+                        File folder = new File("C:/samples/Test/frames/");
+                        File[] frames = folder.listFiles();
+                        for (File frame : frames) {
+                            try{
                             Image inputImage = ImageIO.read(frame);
+                            ImageNudityDetector nudityDetector = new ColoredImageNudityDetector();
                             boolean isNude = nudityDetector.isImageNude(inputImage);
                             System.out.println("file: " + frame.getName() + ", isNude: " + isNude);
-                            frame.delete();
-                        } catch (IOException e) {
+                            }catch(IOException e) {}
                         }
-                    }
                 }
+                        
                 progressIndicator.setVisible(false);
                 textualProgress.setVisible(false);
                 cancelProcessing.setVisible(false);
@@ -184,19 +159,20 @@ public class FileUploaderPanel extends VerticalLayout {
 
     public static class LineBreakCounter implements Receiver {
 
-        private File uploadedFile;
+        private File uploadedFile = null;
         private String fileName;
         private String mtype;
-
+        /**
+         * return an OutputStream that simply counts line ends
+         */
         public OutputStream receiveUpload(String filename, String MIMEType) {
             fileName = filename;
             mtype = MIMEType;
-            uploadedFile = new File("D:/" + fileName);
+            uploadedFile = new File("C:/samples/Test/" + fileName);
             FileOutputStream fos = null;
             try {
                 fos = new FileOutputStream(uploadedFile);
-            } catch (IOException e) {
-            }
+            }catch(IOException e){}
             return fos;
         }
 

@@ -1,30 +1,21 @@
 package edu.amaes.nudetech.algo.video.frameextract;
 
+import com.xuggle.xuggler.*;
 import edu.amaes.nudetech.algo.video.frameextract.utilities.VideoExtractProperties;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-
 import javax.imageio.ImageIO;
-
 import org.apache.log4j.Logger;
-
-import com.xuggle.xuggler.Global;
-import com.xuggle.xuggler.ICodec;
-import com.xuggle.xuggler.IContainer;
-import com.xuggle.xuggler.IPacket;
-import com.xuggle.xuggler.IPixelFormat;
-import com.xuggle.xuggler.IStream;
-import com.xuggle.xuggler.IStreamCoder;
-import com.xuggle.xuggler.IVideoPicture;
-import com.xuggle.xuggler.IVideoResampler;
-import com.xuggle.xuggler.Utils;
 
 public class VideoFrameExtractorImpl implements VideoFrameExtractor {
 
     private static final Logger LOGGER = Logger.getLogger(VideoFrameExtractorImpl.class);
     private static final String FILE_DOT = ".";
     private static final double DEFAULT_SECONDS_BETWEEN_FRAMES = 0.5;
+    private static final String PROPERTY_OUTPUT_FILE_TYPE = "output.file.type";
+    private static final String PROPERTY_SECONDS_BETWEEN_FRAMES = "seconds.between.frames";
+    private static final String PROPERTY_SUPPORTED_FILE_TYPES = "supported.file.types";
     private double secondsBetweenFrames;
     private long nanoSecondsBetweenFrames;
     private long timeLastFrameWrite;
@@ -38,15 +29,10 @@ public class VideoFrameExtractorImpl implements VideoFrameExtractor {
         init();
     }
 
-    private void createDirectory(String outputDirectory) {
-        File outputDir = new File(outputDirectory);
-        outputDir.mkdirs();
-    }
-
     private void init() {
         currentFrameNo = 0;
         timeLastFrameWrite = Global.NO_PTS;
-        outputFileType = VideoExtractProperties.getString("output.file.type");
+        outputFileType = VideoExtractProperties.getString(PROPERTY_OUTPUT_FILE_TYPE);
         initializeSupportedVideoFileTypes();
         initializeSecondsBetweenFrames();
     }
@@ -54,7 +40,7 @@ public class VideoFrameExtractorImpl implements VideoFrameExtractor {
     private void initializeSupportedVideoFileTypes() {
         supportedVideoFileTypes = new String[0];
 
-        String fileTypes = VideoExtractProperties.getString("supported.file.types");
+        String fileTypes = VideoExtractProperties.getString(PROPERTY_SUPPORTED_FILE_TYPES);
 
         if (fileTypes != null && !fileTypes.isEmpty()) {
             supportedVideoFileTypes = fileTypes.split(",");
@@ -63,7 +49,7 @@ public class VideoFrameExtractorImpl implements VideoFrameExtractor {
 
     private void initializeSecondsBetweenFrames() {
         try {
-            String secBetFrames = VideoExtractProperties.getString("seconds.between.frames");
+            String secBetFrames = VideoExtractProperties.getString(PROPERTY_SECONDS_BETWEEN_FRAMES);
             secondsBetweenFrames = Double.parseDouble(secBetFrames);
         } catch (Exception ex) {
             secondsBetweenFrames = DEFAULT_SECONDS_BETWEEN_FRAMES;
@@ -241,14 +227,12 @@ public class VideoFrameExtractorImpl implements VideoFrameExtractor {
     private void closeContainer(IContainer container) {
         if (container != null) {
             container.close();
-            container = null;
         }
     }
 
     private void closeVideoDecoder(IStreamCoder videoCoder) {
         if (videoCoder != null) {
             videoCoder.close();
-            videoCoder = null;
         }
     }
 
@@ -268,6 +252,11 @@ public class VideoFrameExtractorImpl implements VideoFrameExtractor {
             throw new IllegalArgumentException(
                     "Invalid output directory: not a valid directory");
         }
+    }
+
+    private void createDirectory(String outputDirectory) {
+        File outputDir = new File(outputDirectory);
+        outputDir.mkdirs();
     }
 
     private void validateVideoFile(String videoFilename) {
