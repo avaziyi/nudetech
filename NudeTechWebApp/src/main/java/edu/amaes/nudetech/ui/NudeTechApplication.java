@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package edu.amaes.nudetech.ui;
 
 import edu.amaes.nudetech.ui.utililities.MessagesUtil;
@@ -44,15 +40,16 @@ public class NudeTechApplication extends Application {
         mainPanel.setContent(mainPanelLayout);
 
         FileUploaderPanel controlPanel = new FileUploaderPanel();
-
-        VerticalLayout helpPanel = new VerticalLayout();
-        helpPanel.setMargin(true);
-
         
         Embedded aboutPanel = new Embedded("aboutTxt", new ThemeResource("info/about.html"));
         aboutPanel.setType(Embedded.TYPE_BROWSER);
         aboutPanel.setWidth("100%");
         aboutPanel.setHeight("100%");
+        
+        Embedded helpPanel = new Embedded("helpTxt", new ThemeResource("info/help.html"));
+        helpPanel.setType(Embedded.TYPE_BROWSER);
+        helpPanel.setWidth("100%");
+        helpPanel.setHeight("100%");
 
         TabSheet infoTabSheet = new TabSheet();
         infoTabSheet.setWidth("100%");

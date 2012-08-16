@@ -16,79 +16,88 @@ import edu.amaes.nudetech.algo.skindetect.vo.SkinDetectedImage;
 
 public class ColoredImageNudityDetector implements ImageNudityDetector {
 
-	private static final int PIXEL_COUNT_THRESHOLD = 10;
+    private static final int PIXEL_COUNT_THRESHOLD = 10;
+    private SkinDetector skinDetector;
+    private SkinRegionDetector skinRegionDetector;
 
-	private SkinDetector skinDetector;
+    public boolean isImageNude(Image inputImage) {
+        ImagePlus image = new ImagePlus(inputImage.toString(), inputImage);
 
-	private SkinRegionDetector skinRegionDetector;
+        SkinDetectedImage skinDetectedImage = detectSkinPixels(image);
 
-	public boolean isImageNude(Image inputImage) {
-		ImagePlus image = new ImagePlus(inputImage.toString(), inputImage);
+        List<SkinRegion> skinRegions = detectSkinRegions(skinDetectedImage);
 
-		skinDetector = new BinaryImageSkinDetector();
-		SkinDetectedImage skinDetectedImage = skinDetector.detectSkin(image);
+        filterOutSmallRegions(skinRegions);
 
-		skinRegionDetector = new BinaryImageSkinRegionDetector();
-		List<SkinRegion> skinRegions = skinRegionDetector
-				.detectSkinRegions(skinDetectedImage.getImage());
+        Collections.sort(skinRegions, new SkinRegionComparator());
 
-		filterOutSmallRegions(skinRegions);
+        return evaluateNudity(image, skinDetectedImage, skinRegions);
+    }
 
-		Collections.sort(skinRegions, new SkinRegionComparator());
+    private boolean evaluateNudity(ImagePlus image, SkinDetectedImage skinDetectedImage, List<SkinRegion> skinRegions) {
+        int skinRegionsCount = skinRegions.size();
+        int totalPixels = image.getWidth() * image.getHeight();
+        int skinPixelCount = skinDetectedImage.getSkinPixelCount();
 
-		int skinRegionsCount = skinRegions.size();
-		int totalPixels = image.getWidth() * image.getHeight();
-		int skinPixelCount = skinDetectedImage.getSkinPixelCount();
+        if (skinRegionsCount < 3) {
+            return false;
+        }
 
-		if (skinRegionsCount < 3) {
-			return false;
-		}
+        double skinPixelPercentage = (skinPixelCount / (totalPixels * 1.0)) * 100;
+        if (skinPixelPercentage < 15) {
+            return false;
+        }
 
-		double skinPixelPercentage = (skinPixelCount / (totalPixels * 1.0)) * 100;
-		if (skinPixelPercentage < 15) {
-			return false;
-		}
+        SkinRegion largestSkinRegion = skinRegions.get(0);
+        SkinRegion secondLargestSkinRegion = skinRegions.get(1);
+        SkinRegion thirdLargestSkinRegion = skinRegions.get(2);
 
-		SkinRegion largestSkinRegion = skinRegions.get(0);
-		SkinRegion secondLargestSkinRegion = skinRegions.get(1);
-		SkinRegion thirdLargestSkinRegion = skinRegions.get(2);
+        double skinPixelPercentLargest = (largestSkinRegion.getNumberOfPixels() / (skinPixelCount * 1.0)) * 100;
+        double skinPixelPercent2ndLargest = (secondLargestSkinRegion.getNumberOfPixels() / (skinPixelCount * 1.0)) * 100;
+        double skinPixelPercent3rdLargest = (thirdLargestSkinRegion.getNumberOfPixels() / (skinPixelCount * 1.0)) * 100;
 
-		double skinPixelPercentLargest = (largestSkinRegion.getNumberOfPixels() / (skinPixelCount * 1.0)) * 100;
-		double skinPixelPercent2ndLargest = (secondLargestSkinRegion
-				.getNumberOfPixels() / (skinPixelCount * 1.0)) * 100;
-		double skinPixelPercent3rdLargest = (thirdLargestSkinRegion
-				.getNumberOfPixels() / (skinPixelCount * 1.0)) * 100;
+        if (skinPixelPercentLargest < 35 && skinPixelPercent2ndLargest < 30
+                && skinPixelPercent3rdLargest < 30) {
+            return false;
+        }
 
-		if (skinPixelPercentLargest < 35 && skinPixelPercent2ndLargest < 30
-				&& skinPixelPercent3rdLargest < 30) {
-			return false;
-		}
-		
-		if (skinPixelPercentLargest < 45) {
-			return false;
-		}
-		
-		if (skinPixelCount < (0.3 * totalPixels)) {
-			return false;
-		}
-		
-		if (skinRegionsCount > 60) {
-			return false;
-		}
+        if (skinPixelPercentLargest < 45) {
+            return false;
+        }
 
-		return true;
-	}
+        if (skinPixelCount < (0.3 * totalPixels)) {
+            return false;
+        }
 
-	private void filterOutSmallRegions(List<SkinRegion> skinRegions) {
-		SkinRegion[] regionsArray = new SkinRegion[skinRegions.size()];
+        if (skinRegionsCount > 60) {
+            return false;
+        }
 
-		regionsArray = skinRegions.toArray(regionsArray);
+        return true;
+    }
 
-		for (SkinRegion skinRegion : regionsArray) {
-			if (skinRegion.getNumberOfPixels() < PIXEL_COUNT_THRESHOLD) {
-				skinRegions.remove(skinRegion);
-			}
-		}
-	}
+    private List<SkinRegion> detectSkinRegions(SkinDetectedImage skinDetectedImage) {
+        skinRegionDetector = new BinaryImageSkinRegionDetector();
+        List<SkinRegion> skinRegions = skinRegionDetector.detectSkinRegions(skinDetectedImage.getImage());
+        return skinRegions;
+    }
 
+    private SkinDetectedImage detectSkinPixels(ImagePlus image) {
+        skinDetector = new BinaryImageSkinDetector();
+        SkinDetectedImage skinDetectedImage = skinDetector.detectSkin(image);
+
+        return skinDetectedImage;
+    }
+
+    private void filterOutSmallRegions(List<SkinRegion> skinRegions) {
+        SkinRegion[] regionsArray = new SkinRegion[skinRegions.size()];
+
+        regionsArray = skinRegions.toArray(regionsArray);
+
+        for (SkinRegion skinRegion : regionsArray) {
+            if (skinRegion.getNumberOfPixels() < PIXEL_COUNT_THRESHOLD) {
+                skinRegions.remove(skinRegion);
+            }
+        }
+    }
 }
