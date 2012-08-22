@@ -92,10 +92,10 @@ public class FileUploaderPanel extends VerticalLayout {
 
         uploadDetailsPanelLayout.addComponent(fileName);
 
-        imageNude = new Embedded("", new ThemeResource("img/x.jpg"));
+        imageNude = new Embedded("", new ThemeResource("img/x_nude.jpg"));
         imageNude.setType(Embedded.TYPE_IMAGE);
 
-        imageNotNude = new Embedded("", new ThemeResource("img/check.jpg"));
+        imageNotNude = new Embedded("", new ThemeResource("img/check_notnude.jpg"));
         imageNotNude.setType(Embedded.TYPE_IMAGE);
 
         uploadDetailsPanelLayout.addComponent(imageNude);
@@ -252,7 +252,7 @@ public class FileUploaderPanel extends VerticalLayout {
                         }  
                     }
                     else {
-                         Embedded checkIMG = new Embedded("", new ThemeResource("img/check.jpg"));
+                         Embedded checkIMG = new Embedded("", new ThemeResource("img/check_notnude.jpg"));
                          checkIMG.setType(Embedded.TYPE_IMAGE);
                          imageModal.addComponent(checkIMG);
                     }
