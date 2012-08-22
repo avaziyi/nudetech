@@ -69,11 +69,14 @@ public class FileUploaderPanel extends VerticalLayout {
         cancelProcessing.setStyleName("small");
 
         Panel uploadDetailsPanel = new Panel("Upload Details");
+        uploadDetailsPanel.isImmediate();
         uploadDetailsPanel.setWidth("100%");
-        uploadDetailsPanel.setScrollable(false);
+        uploadDetailsPanel.setHeight("50%");
 
         FormLayout uploadDetailsPanelLayout = new FormLayout();
         uploadDetailsPanelLayout.setMargin(true);
+        uploadDetailsPanelLayout.isImmediate();
+        uploadDetailsPanelLayout.setMargin(false, false, false, true);
         uploadDetailsPanel.setContent(uploadDetailsPanelLayout);
 
         HorizontalLayout progressLayout = new HorizontalLayout();
@@ -111,6 +114,8 @@ public class FileUploaderPanel extends VerticalLayout {
                 for(File detectedFrames: nudeFrames) {
                         detectedFrames.delete();
                     }
+                
+                fileName.setValue("");
             }
         };
         
@@ -144,6 +149,7 @@ public class FileUploaderPanel extends VerticalLayout {
 
         addComponent(uploadDetailsPanel);
         addComponent(open);
+        open.setVisible(false);
 
         upload.addListener(new Upload.StartedListener() {
 
@@ -231,17 +237,24 @@ public class FileUploaderPanel extends VerticalLayout {
                         } catch (IOException e) {
                         }
                     }
+                    imageModal.removeAllComponents();
                     Collections.shuffle(nudeFrames);
                     if (nudeFrames.size() > 10) {
                         for (int x = 0; x < 10; x++) {
                             final FileResource imageResource = new FileResource(nudeFrames.get(x), getApplication());
                             imageModal.addComponent(new Embedded("",imageResource));
                         }
-                    } else {
+                    } 
+                    else if(nudeFrames.size()>1 && nudeFrames.size()<10) {
                         for (int x = 0; x < nudeFrames.size(); x++) {
                             final FileResource imageResource = new FileResource(nudeFrames.get(x), getApplication());
                             imageModal.addComponent(new Embedded("",imageResource));
-                        }
+                        }  
+                    }
+                    else {
+                         Embedded checkIMG = new Embedded("", new ThemeResource("img/check.jpg"));
+                         checkIMG.setType(Embedded.TYPE_IMAGE);
+                         imageModal.addComponent(checkIMG);
                     }
                     imageModal.setCaption("VIDEO IS " + ((numNude/numFrames)*100) + "% NUDE");
                     getWindow().addWindow(imageModal);
@@ -264,6 +277,7 @@ public class FileUploaderPanel extends VerticalLayout {
          * return an OutputStream that simply counts line ends
          */
         public OutputStream receiveUpload(String filename, String MIMEType) {
+            
             fileName = filename;
             mtype = MIMEType;
             uploadedFile = new File(uploadDir + fileName);
