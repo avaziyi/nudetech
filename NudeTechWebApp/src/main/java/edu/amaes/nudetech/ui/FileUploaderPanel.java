@@ -6,7 +6,6 @@ import com.vaadin.ui.Button.ClickEvent;
 import com.vaadin.ui.Upload.FinishedEvent;
 import com.vaadin.ui.Upload.Receiver;
 import com.vaadin.ui.Upload.StartedEvent;
-import com.vaadin.ui.Upload.SucceededEvent;
 import com.vaadin.ui.*;
 import com.vaadin.ui.Window.CloseEvent;
 import com.vaadin.ui.Window.CloseListener;
@@ -24,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import javax.activation.MimetypesFileTypeMap;
 import javax.imageio.ImageIO;
+import org.apache.log4j.Logger;
 
 /**
  *
@@ -31,8 +31,9 @@ import javax.imageio.ImageIO;
  */
 public class FileUploaderPanel extends VerticalLayout {
 
-    final static String uploadDir = "D:/test/";
-    final static String framesDir = "D:/test/frames/";
+    private final static Logger LOGGER = Logger.getLogger(FileUploaderPanel.class);
+    private final static String uploadDir = "C:/test/";
+    private final static String framesDir = "C:/test/frames/";
     private Label fileName = new Label();
     private Label textualProgress = new Label();
     private ProgressIndicator progressIndicator = new ProgressIndicator();
@@ -61,6 +62,7 @@ public class FileUploaderPanel extends VerticalLayout {
         final Button cancelProcessing = new Button("Cancel Upload");
         cancelProcessing.addListener(new Button.ClickListener() {
 
+            @Override
             public void buttonClick(Button.ClickEvent event) {
                 upload.interruptUpload();
             }
@@ -132,7 +134,7 @@ public class FileUploaderPanel extends VerticalLayout {
         
         open = new Button("View Detected Frames",
                 new Button.ClickListener() {
-                    // inline click-listener
+                    @Override
                     public void buttonClick(ClickEvent event) {
                         if (imageModal.getParent() != null) {
                             // window is already showing
@@ -153,6 +155,7 @@ public class FileUploaderPanel extends VerticalLayout {
 
         upload.addListener(new Upload.StartedListener() {
 
+            @Override
             public void uploadStarted(StartedEvent event) {
                 // this method gets called immediatedly after upload is
                 // started
@@ -170,6 +173,7 @@ public class FileUploaderPanel extends VerticalLayout {
 
         upload.addListener(new Upload.ProgressListener() {
 
+            @Override
             public void updateProgress(long readBytes, long contentLength) {
                 // this method gets called several times during the update
                 progressIndicator.setValue(new Float(readBytes / (float) contentLength));
@@ -178,23 +182,9 @@ public class FileUploaderPanel extends VerticalLayout {
             }
         });
 
-        upload.addListener(new Upload.SucceededListener() {
-
-            public void uploadSucceeded(SucceededEvent event) {
-            }
-        });
-
-//        upload.addListener(new Upload.FailedListener() {
-//
-//            public void uploadFailed(FailedEvent event) {
-//                result.setValue(counter.getLineBreakCount()
-//                        + " (counting interrupted at "
-//                        + Math.round(100 * (Float) pi.getValue()) + "%)");
-//            }
-//        });
-
         upload.addListener(new Upload.FinishedListener() {
 
+            @Override
             public void uploadFinished(FinishedEvent event) {
                 String mimetype = new MimetypesFileTypeMap().getContentType(counter.getUploadedFile());
                 String type = mimetype.split("/")[0];
@@ -203,7 +193,7 @@ public class FileUploaderPanel extends VerticalLayout {
                         Image inputImage = ImageIO.read(counter.getUploadedFile());
                         ImageNudityDetector nudityDetector = new ColoredImageNudityDetector();
                         boolean isNude = nudityDetector.isImageNude(inputImage);
-                        System.out.println("file: " + counter.getUploadedFile().getName() + ", isNude: " + isNude);
+                        LOGGER.debug("file: " + counter.getUploadedFile().getName() + ", isNude: " + isNude);
                         if (isNude) {
                             imageNude.setVisible(true);
                         } else {
@@ -226,7 +216,7 @@ public class FileUploaderPanel extends VerticalLayout {
                             Image inputImage = ImageIO.read(frame);
                             ImageNudityDetector nudityDetector = new ColoredImageNudityDetector();
                             boolean isNude = nudityDetector.isImageNude(inputImage);
-                            System.out.println("file: " + frame.getName() + ", isNude: " + isNude);
+                            LOGGER.debug("file: " + frame.getName() + ", isNude: " + isNude);
                             numFrames++;
                             if (isNude) {
                                 nudeFrames.add(frame);
@@ -272,10 +262,8 @@ public class FileUploaderPanel extends VerticalLayout {
         private File uploadedFile = null;
         private String fileName;
         private String mtype;
-
-        /**
-         * return an OutputStream that simply counts line ends
-         */
+        
+        @Override
         public OutputStream receiveUpload(String filename, String MIMEType) {
             
             fileName = filename;
