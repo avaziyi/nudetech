@@ -1,0 +1,3 @@
+NUDEtech is a tool for automatically detecting nudity of an uploaded image or video. Through the advance technologies and algorithms in computer vision, it is possible to determine if a certain video or image is pornographic or contains nudity.
+
+This is a prototype system, and this tool can be integrated with various file and media sharing sites such as Youtube, Flickr, Rapidshare, Megaupload etc to prevent images/videos containing nudity or pornography from being uploaded to their system.
